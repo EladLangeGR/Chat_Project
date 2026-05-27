@@ -28,7 +28,9 @@ typedef enum
 
     CM_REG_FAILED,
 
-    CM_LOGIN_FAILED
+    CM_LOGIN_FAILED,
+    
+    CM_UNINITIALIZED_ERROR
 
 } ClientMngStatus;
 

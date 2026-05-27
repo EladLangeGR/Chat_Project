@@ -7,6 +7,10 @@ struct Client
     int server_socket_fd;
 
     char username[UNAME_MAX_LEN + 1];
+
+    uint8_t send_buffer[MAX_BUFFER_SIZE];
+
+    uint8_t recv_buffer[MAX_BUFFER_SIZE];
 };
 
 
@@ -42,33 +46,36 @@ void ClientDestroy(Client* _client)
 
 ClientMngStatus ClientMngRegister(Client* _client, const char* _username, const char* _password)
 {
-    uint8_t buffer[BUFFER_SIZE];
+
+    ClientMngStatus ret_status;
+    RegRespStatus auth_resp;
 
     if (_client == NULL)
     {
-        return CM_PROTOCOL_ERROR;
+        return CM_UNINITIALIZED_ERROR;
     }
 
     if (_client->state == CLIENT_DISCONNECTED)
     {
-        if (ConnectToServer(_client) != CN_SUCCESS)
-        {
+        if (ConnectToServer(&(_client->server_socket_fd)) != CN_SUCCESS)
             return CM_CONNECTION_FAILED;
-        }
 
         _client->state = CLIENT_CONNECTED;
     }
 
-    if (ProtocolBuildAuthReq(buffer, MSG_REG_REQ, _username, _password) != PROTOCOL_SUCCESS)
-    {
+    if (ProtocolBuildAuthReq(_client->send_buffer, MSG_REG_REQ, _username, _password) != PROTOCOL_SUCCESS)
         return CM_PROTOCOL_ERROR;
-    }
 
-    /*
-        send
-        recv
-        parse response
-    */
+
+    if (ClientNetSend(_client->server_socket_fd, _client->send_buffer) != CN_SUCCESS)
+        return CM_SEND_FAILED;
+
+
+    if (ClientNetRecv(_client->server_socket_fd, _client->recv_buffer) != CN_SUCCESS)
+        return CM_RECV_FAILED;
+
+    if (ProtocolParseAuthResp(_client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
+        return CM_PROTOCOL_ERROR;
 
     return CM_SUCCESS;
 }

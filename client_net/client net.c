@@ -1,24 +1,7 @@
 #include "client_net.h"
 
-struct Client
-{
-    ClientState state;
-    int server_socket_fd;
-};
 
-
-Client* InitClient()
-{
-    Client* client;
-
-    client = (Client*)malloc(sizeof(Client));
-    client->state = DISCONNECTED;
-
-    return client;
-}
-
-
-ClientNetwokMessage ClientConnectToServer(Client* _client)
+ClientNetworkMessage ClientConnectToServer(int* _sock_fd)
 {
     int sock;
     struct sockaddr_in sock_addr;
@@ -41,14 +24,37 @@ ClientNetwokMessage ClientConnectToServer(Client* _client)
         return CN_CONNECTION_TO_SERVER_FAILURE;
     }
 
-    _client->server_socket_fd = sock;
-    _client->state = CONNECTED;
+    _sock_fd = sock;
 
     return CN_SUCCESS;
 }
 
-void ClientDisconnectFromServer(Client* _client)
+void ClientDisconnectFromServer(int* _sock_fd)
 {
-    close(_client->server_socket_fd);
-    _client->state = DISCONNECTED;   
+    close(_sock_fd); 
 } 
+
+ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer)
+{
+    size_t sent_bytes;
+    uint16_t total_size = _buffer[1] + HEADER_SIZE;
+
+    if ((sent_bytes = send(_sock_fd, _buffer, _buffer[1] + HEADER_SIZE, 0)) != total_size)
+        return CN_SEND_FAIL;
+    
+    return CN_SUCCESS;
+}
+
+ClientNetworkMessage ClientNetRecv(int _sock_fd, uint8_t* _buffer)
+{
+    size_t recv_bytes;
+    uint8_t payload_size;
+
+    if ((recv_bytes = recv(_sock_fd ,_buffer ,HEADER_SIZE, 0)) < 0)
+        return CN_RECV_FAIL;
+
+    if ((recv_bytes = recv(_sock_fd ,&_buffer[HEADER_SIZE] ,payload_size, 0)) < 0)
+        return CN_RECV_FAIL;
+
+    return CN_SUCCESS;
+}
