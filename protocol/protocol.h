@@ -190,7 +190,7 @@ typedef enum
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildAuthReq(uint8_t* _buffer, MessageType _msg_type, const char* _username, const char* _password);
+int ProtocolBuildAuthReq(uint8_t* _buffer, MessageType _msg_type, const char* _username, const char* _password);
 
 
 /**
@@ -229,7 +229,7 @@ ProtocolStatus ProtocolParseAuthReq(uint8_t* _buffer, char* _username, char* _pa
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildAuthResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status);
+int ProtocolBuildAuthResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status);
 
 
 /**
@@ -261,7 +261,7 @@ ProtocolStatus ProtocolParseAuthResp(uint8_t* _buffer, uint8_t* _status);
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildLogoutReq(uint8_t* _buffer);
+int ProtocolBuildLogoutReq(uint8_t* _buffer);
 
 
 /**
@@ -289,7 +289,7 @@ ProtocolStatus ProtocolParseLogoutReq(uint8_t* _buffer);
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildLogoutResp(uint8_t* _buffer, LogoutRespStatus _status);
+int ProtocolBuildLogoutResp(uint8_t* _buffer, LogoutRespStatus _status);
 
 
 /**
@@ -324,7 +324,7 @@ ProtocolStatus ProtocolParseLogoutResp(uint8_t* _buffer, LogoutRespStatus* _stat
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildGroupReq(uint8_t* _buffer, MessageType _msg_type, const char* _group_name);
+int ProtocolBuildGroupReq(uint8_t* _buffer, MessageType _msg_type, const char* _group_name);
 
 
 /**
@@ -364,7 +364,7 @@ ProtocolStatus ProtocolParseGroupReq(uint8_t* _buffer, char* _group_name);
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip);
+int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip);
 
 
 /**
@@ -398,7 +398,7 @@ ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* 
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolBuildExitGroupResp(uint8_t* _buffer, ExitGroupRespStatus _status);
+int ProtocolBuildExitGroupResp(uint8_t* _buffer, ExitGroupRespStatus _status);
 
 
 /**
