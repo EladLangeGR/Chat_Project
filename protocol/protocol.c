@@ -125,7 +125,7 @@ int ProtocolBuildLogoutReq(uint8_t* _buffer)
     _buffer[0] = MSG_LOGOUT_REQ;
     _buffer[1] = 0;
 
-    return 2;
+    return HEADER_SIZE;
 }
 
 
