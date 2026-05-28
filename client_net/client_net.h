@@ -8,12 +8,6 @@
 #include <sys/wait.h>
 
 
-typedef struct Client Client;
-
-typedef enum{
-    CONNECTED,
-    DISCONNECTED,
-} ClientState;
 
 typedef enum{
     CN_SUCCESS,
@@ -28,6 +22,10 @@ typedef enum{
 #define ADDRESS ("127.0.0.1")
 #define BUFFER_SIZE 200
 
-ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer);
+ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer, int msg_size);
 
 ClientNetworkMessage ClientNetRecv(int _sock_fd, uint8_t* _buffer);
+
+ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, uint16_t _port);
+
+void ClientDisconnectFromServer(int* _sock_fd);

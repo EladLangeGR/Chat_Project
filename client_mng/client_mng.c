@@ -8,74 +8,158 @@ struct Client
 
     char username[UNAME_MAX_LEN + 1];
 
+    char* address;
+
+    uint16_t port;
+
     uint8_t send_buffer[MAX_BUFFER_SIZE];
 
     uint8_t recv_buffer[MAX_BUFFER_SIZE];
 };
 
+static Client* client;
 
-Client* ClientCreate()
+
+ClientMngStatus ClientMngInit()
 {
-    Client* new_client;
+    client = malloc(sizeof(Client));
 
-    new_client = malloc(sizeof(Client));
-
-    if (new_client == NULL)
+    if (client == NULL)
     {
-        return NULL;
+        return CM_ALLOCATION_ERROR;
     }
 
-    new_client->state = CLIENT_DISCONNECTED;
+    client->address = malloc(sizeof(strlen(ADDRESS)+1));
 
-    new_client->server_socket_fd = -1;
+    if (client->address == NULL)
+    {
+        free(client);
+        return CM_ALLOCATION_ERROR;
+    }
 
-    return new_client;
+    client->state = CLIENT_DISCONNECTED;
+
+    client->server_socket_fd = -1;
+
+    strcpy(client->address, ADDRESS);
+
+    client->port = PORT;
+
+    return CM_SUCCESS;
 }
 
 
-void ClientDestroy(Client* _client)
+void ClientMngDestroy()
 {
-    if (_client == NULL)
+    if (client == NULL)
     {
         return;
     }
 
-    free(_client);
+    free(client->address);
+
+    free(client);
 }
 
 
-ClientMngStatus ClientMngRegister(Client* _client, const char* _username, const char* _password)
+RegRespStatus ClientMngRegister(const char* _username, const char* _password)
 {
 
-    ClientMngStatus ret_status;
     RegRespStatus auth_resp;
+    int req_msg_size;
 
-    if (_client == NULL)
+    if (client->state == CLIENT_DISCONNECTED)
     {
-        return CM_UNINITIALIZED_ERROR;
+        if (ClientConnectToServer(&(client->server_socket_fd), client->address, client->port) != CN_SUCCESS)
+            return REG_SYSTEM_ERROR;
+
+        client->state = CLIENT_CONNECTED;
     }
 
-    if (_client->state == CLIENT_DISCONNECTED)
-    {
-        if (ConnectToServer(&(_client->server_socket_fd)) != CN_SUCCESS)
-            return CM_CONNECTION_FAILED;
+    if ((req_msg_size = ProtocolBuildAuthReq(client->send_buffer, MSG_REG_REQ, _username, _password)) < 0)
+        return REG_SYSTEM_ERROR;
 
-        _client->state = CLIENT_CONNECTED;
+
+    if (ClientNetSend(client->server_socket_fd, client->send_buffer, req_msg_size) != CN_SUCCESS)
+        return REG_SYSTEM_ERROR;
+
+
+    if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
+        return REG_SYSTEM_ERROR;
+
+    if (ProtocolParseAuthResp(client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
+        return REG_SYSTEM_ERROR;
+
+    if (auth_resp == REG_SUCCESS)
+    {
+        client->state = CLIENT_LOGGED_IN;
+        strcpy(client->username, _username);
+    }
+        
+    return auth_resp;
+}
+
+LoginRespStatus ClientMngLogin(const char* _username, const char* _password)
+{
+    LoginRespStatus auth_resp;
+    int req_msg_size;
+
+    if (client->state == CLIENT_DISCONNECTED)
+    {
+        if (ClientConnectToServer(&(client->server_socket_fd), client->address, client->port) != CN_SUCCESS)
+            return LOGIN_SYSTEM_ERROR;
+
+        client->state = CLIENT_CONNECTED;
     }
 
-    if (ProtocolBuildAuthReq(_client->send_buffer, MSG_REG_REQ, _username, _password) != PROTOCOL_SUCCESS)
-        return CM_PROTOCOL_ERROR;
+    if ((req_msg_size = ProtocolBuildAuthReq(client->send_buffer, MSG_LOGIN_REQ, _username, _password)) < 0)
+        return LOGIN_SYSTEM_ERROR;
 
 
-    if (ClientNetSend(_client->server_socket_fd, _client->send_buffer) != CN_SUCCESS)
-        return CM_SEND_FAILED;
+    if (ClientNetSend(client->server_socket_fd, client->send_buffer, req_msg_size) != CN_SUCCESS)
+        return LOGIN_SYSTEM_ERROR;
 
 
-    if (ClientNetRecv(_client->server_socket_fd, _client->recv_buffer) != CN_SUCCESS)
-        return CM_RECV_FAILED;
+    if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
+        return LOGIN_SYSTEM_ERROR;
 
-    if (ProtocolParseAuthResp(_client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
-        return CM_PROTOCOL_ERROR;
+    if (ProtocolParseAuthResp(client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
+        return LOGIN_SYSTEM_ERROR;
 
-    return CM_SUCCESS;
+    if (auth_resp == LOGIN_SUCCESS)
+        {
+            client->state = CLIENT_LOGGED_IN;
+            strcpy(client->username, _username);
+        }
+    return auth_resp;
+}
+
+LogoutRespStatus ClientMngLogout()
+{
+    LogoutRespStatus logout_resp;
+    int req_msg_size;
+
+    if (client->state == CLIENT_CONNECTED)
+        return LOGOUT_SUCCESS;
+    
+    if ((req_msg_size = ProtocolBuildLogoutReq(client->send_buffer)) < 0)
+        return LOGOUT_SYSTEM_ERROR;
+
+    if (ClientNetSend(client->server_socket_fd, client->send_buffer, req_msg_size) != CN_SUCCESS)
+        return LOGOUT_SYSTEM_ERROR;
+
+    if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
+        return LOGOUT_SYSTEM_ERROR;
+
+    if (ProtocolParseLogoutResp(client->recv_buffer, &logout_resp) != PROTOCOL_SUCCESS)
+        return LOGOUT_SYSTEM_ERROR;
+
+    if (logout_resp == LOGOUT_SUCCESS)
+    {
+        ClientDisconnectFromServer(client->server_socket_fd);
+        client->state = CLIENT_DISCONNECTED;
+        memset(client->username, 0, sizeof(client->username));
+    }
+
+    return logout_resp;
 }

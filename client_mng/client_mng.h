@@ -2,7 +2,7 @@
 #define __CLIENT_MNG_H__
 
 #include "protocol.h"
-#include "client_net.h"
+#include "../client_net/client_net.h"
 
 typedef struct Client Client;
 
@@ -30,7 +30,7 @@ typedef enum
 
     CM_LOGIN_FAILED,
     
-    CM_UNINITIALIZED_ERROR
+    CM_ALLOCATION_ERROR
 
 } ClientMngStatus;
 
@@ -48,11 +48,11 @@ void ClientDestroy(Client* _client);
 /*============================== AUTH ACTIONS ===============================*/
 /*===========================================================================*/
 
-ClientMngStatus ClientMngRegister(Client* _client, const char* _username, const char* _password);
+ClientMngStatus ClientMngRegister(const char* _username, const char* _password);
 
-ClientMngStatus ClientMngLogin(Client* _client, const char* _username, const char* _password);
+ClientMngStatus ClientMngLogin(const char* _username, const char* _password);
 
-ClientMngStatus ClientMngLogout(Client* _client);
+ClientMngStatus ClientMngLogout();
 
 
 #endif /* __CLIENT_MNG_H__ */

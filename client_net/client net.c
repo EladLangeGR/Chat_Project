@@ -1,7 +1,7 @@
 #include "client_net.h"
 
 
-ClientNetworkMessage ClientConnectToServer(int* _sock_fd)
+ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, uint16_t _port)
 {
     int sock;
     struct sockaddr_in sock_addr;
@@ -15,8 +15,8 @@ ClientNetworkMessage ClientConnectToServer(int* _sock_fd)
     memset(&sock_addr, 0, sizeof(sock_addr));
 
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = inet_addr(ADDRESS);
-    sock_addr.sin_port = htons(PORT);
+    sock_addr.sin_addr.s_addr = inet_pton(AF_INET, _address, &sock_addr.sin_addr);
+    sock_addr.sin_port = htons(_port);
 
     // Connection
     if (connect(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr))<0)
@@ -24,22 +24,21 @@ ClientNetworkMessage ClientConnectToServer(int* _sock_fd)
         return CN_CONNECTION_TO_SERVER_FAILURE;
     }
 
-    _sock_fd = sock;
+    *_sock_fd = sock;
 
     return CN_SUCCESS;
 }
 
 void ClientDisconnectFromServer(int* _sock_fd)
 {
-    close(_sock_fd); 
+    close(*_sock_fd); 
 } 
 
-ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer)
+ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer, int msg_size)
 {
-    size_t sent_bytes;
-    uint16_t total_size = _buffer[1] + HEADER_SIZE;
+    ssize_t sent_bytes;
 
-    if ((sent_bytes = send(_sock_fd, _buffer, _buffer[1] + HEADER_SIZE, 0)) != total_size)
+    if ((sent_bytes = send(_sock_fd, _buffer, msg_size, 0)) != msg_size)
         return CN_SEND_FAIL;
     
     return CN_SUCCESS;
@@ -47,13 +46,15 @@ ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer)
 
 ClientNetworkMessage ClientNetRecv(int _sock_fd, uint8_t* _buffer)
 {
-    size_t recv_bytes;
+    ssize_t recv_bytes;
     uint8_t payload_size;
 
-    if ((recv_bytes = recv(_sock_fd ,_buffer ,HEADER_SIZE, 0)) < 0)
+    if ((recv_bytes = recv(_sock_fd ,_buffer ,HEADER_SIZE, MSG_WAITALL)) < 0)
         return CN_RECV_FAIL;
 
-    if ((recv_bytes = recv(_sock_fd ,&_buffer[HEADER_SIZE] ,payload_size, 0)) < 0)
+    payload_size = _buffer[1];
+
+    if ((recv_bytes = recv(_sock_fd ,&_buffer[HEADER_SIZE] ,payload_size, MSG_WAITALL)) < 0)
         return CN_RECV_FAIL;
 
     return CN_SUCCESS;
