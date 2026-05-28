@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "../status_defs.h"
+#include "status_defs.h"
 
 
 /*===========================================================================*/

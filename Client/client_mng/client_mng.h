@@ -2,7 +2,7 @@
 #define __CLIENT_MNG_H__
 
 #include "protocol.h"
-#include "../client_net/client_net.h"
+#include "client_net.h"
 
 typedef struct Client Client;
 

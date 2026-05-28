@@ -1,9 +1,8 @@
-#include "../status_defs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../client_mng/client_mng.h"
-#include "../status_defs.h"
+#include "client_mng.h"
+#include "status_defs.h"
 
 /*===========================================================================*/
 /*============================== DEFINITIONS ================================*/

@@ -1,5 +1,4 @@
-// #include "../protocol/protocol.h"
-#include "../client_mng/client_mng.h"
+#include "client_mng.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
