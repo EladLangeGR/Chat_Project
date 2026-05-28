@@ -39,20 +39,20 @@ typedef enum
 /*============================== CLIENT LIFECYCLE ===========================*/
 /*===========================================================================*/
 
-Client* ClientCreate();
+ClientMngStatus ClientMngInit();
 
-void ClientDestroy(Client* _client);
+void ClientMngDestroy();
 
 
 /*===========================================================================*/
 /*============================== AUTH ACTIONS ===============================*/
 /*===========================================================================*/
 
-ClientMngStatus ClientMngRegister(const char* _username, const char* _password);
+RegRespStatus ClientMngRegister(const char* _username, const char* _password);
 
-ClientMngStatus ClientMngLogin(const char* _username, const char* _password);
+LoginRespStatus ClientMngLogin(const char* _username, const char* _password);
 
-ClientMngStatus ClientMngLogout();
+LogoutRespStatus ClientMngLogout();
 
 
 #endif /* __CLIENT_MNG_H__ */

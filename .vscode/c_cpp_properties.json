@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/Client/**",
-                "${workspaceFolder}/../DS"
+                "${workspaceFolder}/../DS",
+                "${workspaceFolder}/./protocol"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

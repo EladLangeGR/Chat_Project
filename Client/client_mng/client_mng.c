@@ -87,7 +87,7 @@ RegRespStatus ClientMngRegister(const char* _username, const char* _password)
     if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
         return REG_SYSTEM_ERROR;
 
-    if (ProtocolParseAuthResp(client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
+    if (ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp) != PROTOCOL_SUCCESS)
         return REG_SYSTEM_ERROR;
 
     if (auth_resp == REG_SUCCESS)
@@ -123,7 +123,7 @@ LoginRespStatus ClientMngLogin(const char* _username, const char* _password)
     if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
         return LOGIN_SYSTEM_ERROR;
 
-    if (ProtocolParseAuthResp(client->recv_buffer, &auth_resp) != PROTOCOL_SUCCESS)
+    if (ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp) != PROTOCOL_SUCCESS)
         return LOGIN_SYSTEM_ERROR;
 
     if (auth_resp == LOGIN_SUCCESS)
@@ -156,7 +156,7 @@ LogoutRespStatus ClientMngLogout()
 
     if (logout_resp == LOGOUT_SUCCESS)
     {
-        ClientDisconnectFromServer(client->server_socket_fd);
+        ClientDisconnectFromServer(&(client->server_socket_fd));
         client->state = CLIENT_DISCONNECTED;
         memset(client->username, 0, sizeof(client->username));
     }

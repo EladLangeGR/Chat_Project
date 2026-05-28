@@ -1,3 +1,6 @@
+#ifndef __UI_H__
+#define __UI_H__
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,3 +28,6 @@ typedef enum
 
 } UIState;
 
+void UIRun();
+
+#endif

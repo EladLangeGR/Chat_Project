@@ -1,4 +1,5 @@
 #include "client_net.h"
+#include "status_defs.h"
 
 
 ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, uint16_t _port)
