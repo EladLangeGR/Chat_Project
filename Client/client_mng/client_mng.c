@@ -7,7 +7,7 @@
 /*=========================== STATIC DECLARATIONS ===========================*/
 /*===========================================================================*/
 
-static void GroupDestroy(Group* _group);
+static void GroupDestroy(void* _group);
 
 static Group* GroupFind(const char* _group_name);
 
@@ -427,9 +427,9 @@ static void PrintProtocolMessage(uint8_t* _buffer, int _size)
     printf("====================================\n");
 }
 
-static void GroupDestroy(Group* _group)
+static void GroupDestroy(void* _group)
 {
-    free(_group);
+    free((Group*)_group);
 }
 
 static Group* GroupFind(const char* _group_name)
