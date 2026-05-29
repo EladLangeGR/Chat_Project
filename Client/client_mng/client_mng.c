@@ -41,9 +41,9 @@ ClientMngStatus ClientMngInit()
 
     client->server_socket_fd = -1;
 
-    strcpy(client->address, ADDRESS);
+    strcpy(client->address, SERVER_IP);
 
-    client->port = PORT;
+    client->port = SERVER_PORT;
 
     return CM_SUCCESS;
 }
