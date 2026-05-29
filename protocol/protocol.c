@@ -250,12 +250,12 @@ ProtocolStatus ProtocolParseGroupReq(uint8_t* _buffer,  char* _group_name)
 /*============================= GROUP RESPONSES =============================*/
 /*===========================================================================*/
 
-int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status,const char* _mc_ip)
+int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status,const char* _mc_ip, const char* _mc_port)
 {
-    uint8_t data_size, ip_size;
+    uint8_t data_size, ip_size, port_size;
     uint8_t msg_index = 2;
 
-    if (_buffer == NULL || _mc_ip == NULL)
+    if (_buffer == NULL || _mc_ip == NULL || _mc_port == NULL)
         return -1;
 
     if (_msg_type != MSG_CREATE_GROUP_RESP &&
@@ -266,7 +266,9 @@ int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _sta
 
     ip_size = strlen(_mc_ip);
 
-    data_size = 3 + ip_size;
+    port_size = strlen(_mc_port);
+
+    data_size = 4 + ip_size + port_size;
 
     _buffer[0] = _msg_type;
     _buffer[1] = data_size;
@@ -277,17 +279,19 @@ int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _sta
 
     ProtocolWriteString(_buffer, &msg_index, _mc_ip);
 
+    ProtocolWriteString(_buffer,&msg_index, _mc_port);
+
     return msg_index;
 }
 
 
-ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip)
+ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip, char* _mc_port)
 {
     uint8_t msg_index = 2;
     uint8_t status_len;
     MessageType msg_type;
 
-    if (_buffer == NULL || _status == NULL || _mc_ip == NULL)
+    if (_buffer == NULL || _status == NULL || _mc_ip == NULL, _mc_port == NULL)
         return PROTOCOL_SERIALIZATION_ERR;
 
     msg_type = ProtocolGetMsgType(_buffer);
@@ -306,6 +310,8 @@ ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* 
     *_status = ProtocolReadUint8(_buffer, &msg_index);
 
     ProtocolReadString(_buffer, &msg_index, _mc_ip);
+
+    ProtocolReadString(_buffer, &msg_index, _mc_port);
 
     return PROTOCOL_SUCCESS;
 }

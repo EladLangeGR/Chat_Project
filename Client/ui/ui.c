@@ -261,7 +261,67 @@ static void UIHandleRegister(UIState* _state)
 
 static void UIHandleLogin(UIState* _state)
 {
-    printf("Login not implemented yet\n");
+    char username[UNAME_MAX_LEN + 1];
+    char password[PSWD_MAX_LEN + 1];
+
+    LoginRespStatus login_status;
+
+    printf("Enter username: ");
+
+    UIGetString(username, sizeof(username));
+
+    printf("Enter password: ");
+
+    UIGetString(password, sizeof(password));
+
+    login_status = ClientMngLogin(username, password);
+
+    switch(login_status)
+    {
+        case LOGIN_SUCCESS:
+
+            printf("Login successful\n");
+
+            *_state = UI_MAIN_MENU;
+
+            break;
+
+        case LOGIN_USER_NOT_FOUND:
+
+            printf("User does not exist\n");
+
+            break;
+
+        case LOGIN_WRONG_PASSWORD:
+
+            printf("Wrong password\n");
+
+            break;
+
+        case LOGIN_USER_ALREADY_ACTIVE:
+
+            printf("User already logged in\n");
+
+            break;
+
+        case LOGIN_INVALID_ARGUMENTS:
+
+            printf("Invalid username or password\n");
+
+            break;
+
+        case LOGIN_SYSTEM_ERROR:
+
+            printf("System error\n");
+
+            break;
+
+        default:
+
+            printf("Unknown login error\n");
+
+            break;
+    }
 }
 
 

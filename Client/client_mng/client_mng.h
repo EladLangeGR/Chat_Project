@@ -3,8 +3,12 @@
 
 #include "protocol.h"
 #include "client_net.h"
+#include <signal.h>
+#include <sys/types.h>
 
 typedef struct Client Client;
+
+typedef struct Group Group;
 
 typedef enum
 {
@@ -54,5 +58,14 @@ LoginRespStatus ClientMngLogin(const char* _username, const char* _password);
 
 LogoutRespStatus ClientMngLogout();
 
+/*===========================================================================*/
+/*============================== GROUP ACTIONS ==============================*/
+/*===========================================================================*/
+
+CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name);
+
+JoinGroupRespStatus ClientMngJoinGroup(const char* _group_name);
+
+ExitGroupRespStatus ClientMngExitGroup(const char* _group_name);
 
 #endif /* __CLIENT_MNG_H__ */

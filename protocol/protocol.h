@@ -209,16 +209,17 @@ ProtocolStatus ProtocolParseGroupReq(uint8_t* _buffer, char* _group_name);
  * - MSG_JOIN_GROUP_RESP
  *
  * Message format:
- * [type][size][status_len][status][ip_len][multicast_ip]
+ * [type][size][status_len][status][ip_len][multicast_ip][port_len][port]
  *
  * @param[out] _buffer Destination serialization buffer.
  * @param[in] _msg_type Group response type.
  * @param[in] _status Response status.
  * @param[in] _mc_ip Multicast IP string.
+ * @param[in] _mc_port Multicast port value.
  *
  * @return ProtocolStatus result.
  */
-int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip);
+int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip, char* _mc_port);
 
 
 /**
@@ -231,10 +232,11 @@ int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _sta
  * @param[in] _buffer Serialized message buffer.
  * @param[out] _status Parsed response status.
  * @param[out] _mc_ip Parsed multicast IP string.
+ * @param[out] _mc_port parsed multicast port value.
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip);
+ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip, char* _mc_port);
 
 
 /*===========================================================================*/
