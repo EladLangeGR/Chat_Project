@@ -19,6 +19,8 @@ struct Client
     uint8_t send_buffer[MAX_BUFFER_SIZE];
 
     uint8_t recv_buffer[MAX_BUFFER_SIZE];
+
+    List* groups;
 };
 
 
@@ -39,6 +41,10 @@ struct Group
 
 static Client* client;
 
+
+/*===========================================================================*/
+/*============================= CLIENT MNG INIT =============================*/
+/*===========================================================================*/
 
 ClientMngStatus ClientMngInit()
 {
@@ -68,6 +74,10 @@ ClientMngStatus ClientMngInit()
     return CM_SUCCESS;
 }
 
+
+/*===========================================================================*/
+/*============================ CLIENT MNG DESTROY ===========================*/
+/*===========================================================================*/
 
 void ClientMngDestroy()
 {
