@@ -19,6 +19,14 @@ static void* GroupRemove(const char* _group_name);
 
 static void PrintProtocolMessage(uint8_t* _buffer, int _size);
 
+static ClientMngStatus LaunchGroupProcesses(Group* _group);
+
+static pid_t ReceivePidFromQueue(int _queue_id, long _msg_type);
+
+/*===========================================================================*/
+/*=========================== STRUCTS DECLARATIONS ==========================*/
+/*===========================================================================*/
+
 struct Client
 {
     ClientState state;
@@ -36,6 +44,8 @@ struct Client
     uint8_t recv_buffer[MAX_BUFFER_SIZE];
 
     List* groups;
+
+    int queue_id;
 };
 
 
@@ -53,6 +63,13 @@ struct Group
     pid_t receiver_pid;
 
 };
+
+typedef struct QMessage
+{
+    long mtype;
+    pid_t pid;
+
+} QMessage;
 
 static Client* client;
 
@@ -106,6 +123,8 @@ void ClientMngDestroy()
     free(client->address);
 
     ListDestroy(&(client->groups), GroupDestroy);
+
+    msgctl(client->queue_id, IPC_RMID, NULL);
 
     free(client);
 }
@@ -235,6 +254,7 @@ CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name)
     int req_msg_size;
     char mc_address[20];
     uint16_t mc_port;
+    Group* new_group;
 
     if (client->state != CLIENT_LOGGED_IN)
     {
@@ -265,11 +285,13 @@ CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name)
 
     if (create_resp == CREATE_GROUP_SUCCESS)
     {
-        if (GroupAdd(_group_name, mc_address, mc_port) != CM_SUCCESS)
+        new_group = GroupAdd(_group_name, mc_address, mc_port);
+        if (!new_group)
         {
             return CREATE_GROUP_SYSTEM_ERROR;
         }
-        // LaunchGroupProcesses(_group_name, mc_address, mc_port);
+        
+        LaunchGroupProcesses(_group_name, mc_address, mc_port);
     }
 
     return create_resp;
@@ -281,6 +303,7 @@ JoinGroupRespStatus ClientMngJoinGroup(const char* _group_name)
     int req_msg_size;
     char mc_address[20];
     uint16_t mc_port;
+    Group* new_group;
 
     if (client->state != CLIENT_LOGGED_IN)
     {
@@ -316,12 +339,13 @@ JoinGroupRespStatus ClientMngJoinGroup(const char* _group_name)
 
     if (join_resp == JOIN_GROUP_SUCCESS)
     {
-        if (GroupAdd(_group_name, mc_address, mc_port) != CM_SUCCESS)
+        new_group = GroupAdd(_group_name, mc_address, mc_port);
+        if (!new_group)
         {
             return CREATE_GROUP_SYSTEM_ERROR;
         }
 
-        // LaunchGroupProcesses(_group_name, mc_address, mc_port);
+        LaunchGroupProcesses(new_group);
     }
 
     return join_resp;
@@ -437,14 +461,14 @@ static int GroupExists(const char* _group_name)
 }
 
 
-static ClientMngStatus GroupAdd(const char* _group_name, const char* _address, uint16_t _port)
+static Group* GroupAdd(const char* _group_name, const char* _address, uint16_t _port)
 {
     Group* group;
     group = malloc(sizeof(Group));
 
     if (group == NULL)
     {
-        return CM_ALLOCATION_ERROR;
+        return NULL;
     }
 
     strcpy(group->name, _group_name);
@@ -457,10 +481,10 @@ static ClientMngStatus GroupAdd(const char* _group_name, const char* _address, u
     if (ListPushTail(client->groups, group) == NULL)
     {
         free(group);
-        return CM_ALLOCATION_ERROR;
+        return NULL;
     }
 
-    return CM_SUCCESS;
+    return group;
 }
 
 
@@ -486,4 +510,55 @@ static void* GroupRemove(const char* _group_name)
 
         itr = ListItrNext(itr);
     }
+}
+
+static pid_t ReceivePidFromQueue(int _queue_id, long _msg_type)
+{
+    QMessage msg;
+
+    if (msgrcv(_queue_id, &msg, sizeof(msg.pid), _msg_type,0) < 0)
+    {
+        perror("msgrcv");
+
+        return -1;
+    }
+
+    return msg.pid;
+}
+
+static ClientMngStatus LaunchGroupProcesses(Group* _group)
+{
+    char command[512];
+
+    snprintf(command,
+             sizeof(command),
+             "gnome-terminal -- ./sender.out%s %u %s %d",
+             _group->mc_address,
+             _group->mc_port,
+             client->username,
+             client->queue_id);
+
+    if (system(command))
+    {
+        return CM_SYSTEM_ERROR;
+    }
+
+    snprintf(command,
+             sizeof(command),
+             "gnome-terminal -- ./receiver.out %s %u %s %d",
+             _group->mc_address,
+             _group->mc_port,
+             client->username,
+             client->queue_id);
+
+    if (system(command))
+    {
+        return CM_SYSTEM_ERROR;
+    }
+
+    _group->sender_pid = ReceivePidFromQueue(client->queue_id, 1);
+
+    _group->receiver_pid = ReceivePidFromQueue(client->queue_id, 2);
+
+    return CM_SUCCESS;
 }

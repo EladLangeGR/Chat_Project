@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/ipc.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -42,7 +43,9 @@ typedef enum
 
     CM_LOGIN_FAILED,
     
-    CM_ALLOCATION_ERROR
+    CM_ALLOCATION_ERROR,
+
+    CM_SYSTEM_ERROR
 
 } ClientMngStatus;
 
