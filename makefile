@@ -21,7 +21,7 @@ INCLUDES = \
 -I./Client/client_net \
 -I./Client/protocol \
 -I./Client/ui \
--I./DS
+-I../DS
 
 
 #===========================================================================#
@@ -45,7 +45,6 @@ Client/client_mng/client_mng.c \
 Client/client_net/client_net.c \
 ./protocol/protocol.c \
 Client/ui/ui.c
-
 
 #===========================================================================#
 #=============================== OBJECT FILES ==============================#

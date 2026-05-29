@@ -291,7 +291,7 @@ ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* 
     uint8_t status_len;
     MessageType msg_type;
 
-    if (_buffer == NULL || _status == NULL || _mc_ip == NULL, _mc_port == NULL)
+    if (_buffer == NULL || _status == NULL || _mc_ip == NULL || _mc_port == NULL)
         return PROTOCOL_SERIALIZATION_ERR;
 
     msg_type = ProtocolGetMsgType(_buffer);

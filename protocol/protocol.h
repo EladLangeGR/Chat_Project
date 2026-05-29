@@ -219,7 +219,7 @@ ProtocolStatus ProtocolParseGroupReq(uint8_t* _buffer, char* _group_name);
  *
  * @return ProtocolStatus result.
  */
-int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip, char* _mc_port);
+int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip, const char* _mc_port);
 
 
 /**

@@ -2,6 +2,21 @@
 #include <stdio.h>
 
 
+
+/*===========================================================================*/
+/*=========================== STATIC DECLARATIONS ===========================*/
+/*===========================================================================*/
+
+static void GroupDestroy(Group* _group);
+
+static Group* GroupFind(const char* _group_name);
+
+static int GroupExists(const char* _group_name);
+
+static ClientMngStatus GroupAdd(const char* _group_name, const char* _address, uint16_t _port);
+
+static void* GroupRemove(const char* _group_name);
+
 static void PrintProtocolMessage(uint8_t* _buffer, int _size);
 
 struct Client
@@ -71,6 +86,8 @@ ClientMngStatus ClientMngInit()
 
     client->port = SERVER_PORT;
 
+    client->groups = ListCreate();
+
     return CM_SUCCESS;
 }
 
@@ -88,9 +105,15 @@ void ClientMngDestroy()
 
     free(client->address);
 
+    ListDestroy(&(client->groups), GroupDestroy);
+
     free(client);
 }
 
+
+/*===========================================================================*/
+/*========================== CLIENT MNG AUTH ACTIONS ========================*/
+/*===========================================================================*/
 
 RegRespStatus ClientMngRegister(const char* _username, const char* _password)
 {
@@ -200,6 +223,12 @@ LogoutRespStatus ClientMngLogout()
     return logout_resp;
 }
 
+
+/*===========================================================================*/
+/*========================== CLIENT MNG GROUP ACTIONS =======================*/
+/*===========================================================================*/
+
+
 CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name)
 {
     CreateGroupRespStatus create_resp;
@@ -236,9 +265,11 @@ CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name)
 
     if (create_resp == CREATE_GROUP_SUCCESS)
     {
-        GroupAdd(_group_name, mc_address, mc_port);
-
-        LaunchGroupProcesses(_group_name, mc_address, mc_port);
+        if (GroupAdd(_group_name, mc_address, mc_port) != CM_SUCCESS)
+        {
+            return CREATE_GROUP_SYSTEM_ERROR;
+        }
+        // LaunchGroupProcesses(_group_name, mc_address, mc_port);
     }
 
     return create_resp;
@@ -285,9 +316,12 @@ JoinGroupRespStatus ClientMngJoinGroup(const char* _group_name)
 
     if (join_resp == JOIN_GROUP_SUCCESS)
     {
-        GroupAdd(_group_name, mc_address, mc_port);
+        if (GroupAdd(_group_name, mc_address, mc_port) != CM_SUCCESS)
+        {
+            return CREATE_GROUP_SYSTEM_ERROR;
+        }
 
-        LaunchGroupProcesses(_group_name, mc_address, mc_port);
+        // LaunchGroupProcesses(_group_name, mc_address, mc_port);
     }
 
     return join_resp;
@@ -347,7 +381,9 @@ ExitGroupRespStatus ClientMngExitGroup(const char* _group_name)
 }
 
 
-
+/*===========================================================================*/
+/*============================== HELPER FUNCTIONS ===========================*/
+/*===========================================================================*/
 
 
 static void PrintProtocolMessage(uint8_t* _buffer, int _size)
@@ -365,4 +401,89 @@ static void PrintProtocolMessage(uint8_t* _buffer, int _size)
 
     printf("\n");
     printf("====================================\n");
+}
+
+static void GroupDestroy(Group* _group)
+{
+    free(_group);
+}
+
+static Group* GroupFind(const char* _group_name)
+{
+    ListItr itr;
+    ListItr end;
+    Group* group;
+
+    itr = ListItrBegin(client->groups);
+    end = ListItrEnd(client->groups);
+
+    while (itr != end)
+    {
+        group = ListItrGet(itr);
+        if (strcmp(group->name, _group_name) == 0)
+        {
+            return group;
+        }
+        itr = ListItrNext(itr);
+    }
+
+    return NULL;
+}
+
+// return non zero value if group exists
+static int GroupExists(const char* _group_name)
+{
+    return GroupFind(_group_name) != NULL;
+}
+
+
+static ClientMngStatus GroupAdd(const char* _group_name, const char* _address, uint16_t _port)
+{
+    Group* group;
+    group = malloc(sizeof(Group));
+
+    if (group == NULL)
+    {
+        return CM_ALLOCATION_ERROR;
+    }
+
+    strcpy(group->name, _group_name);
+    strcpy(group->mc_address, _address);
+
+    group->mc_port = _port;
+    group->sender_pid = -1;
+    group->receiver_pid = -1;
+
+    if (ListPushTail(client->groups, group) == NULL)
+    {
+        free(group);
+        return CM_ALLOCATION_ERROR;
+    }
+
+    return CM_SUCCESS;
+}
+
+
+static void* GroupRemove(const char* _group_name)
+{
+    ListItr itr;
+    ListItr end;
+    Group* group;
+
+    itr = ListItrBegin(client->groups);
+    end = ListItrEnd(client->groups);
+
+    while (itr != end)
+    {
+        group = ListItrGet(itr);
+
+        if (strcmp(group->name, _group_name) == 0)
+        {
+            group = ListItrRemove(itr);
+            GroupDestroy(group);
+            return;
+        }
+
+        itr = ListItrNext(itr);
+    }
 }

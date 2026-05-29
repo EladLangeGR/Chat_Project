@@ -1,9 +1,13 @@
 #ifndef __CLIENT_MNG_H__
 #define __CLIENT_MNG_H__
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdint.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "client_net.h"
 #include "protocol.h"
