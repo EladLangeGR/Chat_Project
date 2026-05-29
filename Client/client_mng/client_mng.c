@@ -13,7 +13,7 @@ static Group* GroupFind(const char* _group_name);
 
 static int GroupExists(const char* _group_name);
 
-static ClientMngStatus GroupAdd(const char* _group_name, const char* _address, uint16_t _port);
+static Group* GroupAdd(const char* _group_name, const char* _address, uint16_t _port);
 
 static void* GroupRemove(const char* _group_name);
 
@@ -291,7 +291,7 @@ CreateGroupRespStatus ClientMngCreateGroup(const char* _group_name)
             return CREATE_GROUP_SYSTEM_ERROR;
         }
         
-        LaunchGroupProcesses(_group_name, mc_address, mc_port);
+        LaunchGroupProcesses(new_group);
     }
 
     return create_resp;
