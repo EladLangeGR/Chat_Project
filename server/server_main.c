@@ -3,7 +3,7 @@
 #include "server_net.h"
 #include "server_mng.h"
 
-#define SERVER_PORT 8080
+#define SERVER_PORT 2222
 
 int main(void)
 {

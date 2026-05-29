@@ -1,4 +1,8 @@
 #include "client_mng.h"
+#include <stdio.h>
+
+
+static void PrintProtocolMessage(uint8_t* _buffer, int _size);
 
 struct Client
 {
@@ -79,16 +83,22 @@ RegRespStatus ClientMngRegister(const char* _username, const char* _password)
     if ((req_msg_size = ProtocolBuildAuthReq(client->send_buffer, MSG_REG_REQ, _username, _password)) < 0)
         return REG_SYSTEM_ERROR;
 
+    PrintProtocolMessage(client->send_buffer, req_msg_size);
 
     if (ClientNetSend(client->server_socket_fd, client->send_buffer, req_msg_size) != CN_SUCCESS)
-        return REG_SYSTEM_ERROR;
+        return REG_SEND_ERROR;
 
 
     if (ClientNetRecv(client->server_socket_fd, client->recv_buffer) != CN_SUCCESS)
-        return REG_SYSTEM_ERROR;
+        return REG_RECV_ERROR;
 
+    ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp);
+    PrintProtocolMessage(client->recv_buffer, client->recv_buffer[1]);
+    
     if (ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp) != PROTOCOL_SUCCESS)
-        return REG_SYSTEM_ERROR;
+        return REG_PARSE_ERROR;
+
+    
 
     if (auth_resp == REG_SUCCESS)
     {
@@ -162,4 +172,22 @@ LogoutRespStatus ClientMngLogout()
     }
 
     return logout_resp;
+}
+
+
+static void PrintProtocolMessage(uint8_t* _buffer, int _size)
+{
+    int i;
+
+    printf("\n====================================\n");
+    printf("Protocol Message (%d bytes)\n", _size);
+    printf("====================================\n");
+
+    for (i = 0; i < _size; i++)
+    {
+        printf("[%02X]", _buffer[i]);
+    }
+
+    printf("\n");
+    printf("====================================\n");
 }

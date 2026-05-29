@@ -64,7 +64,13 @@ typedef enum
 
     REG_INVALID_ARGUMENTS,
 
-    REG_SYSTEM_ERROR
+    REG_SYSTEM_ERROR,
+
+    REG_PARSE_ERROR,
+
+    REG_RECV_ERROR,
+
+    REG_SEND_ERROR
 
 } RegRespStatus;
 

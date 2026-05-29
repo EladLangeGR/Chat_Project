@@ -15,7 +15,7 @@ ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, 
     }
 
     memset(&sock_addr, 0, sizeof(sock_addr));
-
+    
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = inet_pton(AF_INET, _address, &sock_addr.sin_addr);
     sock_addr.sin_port = htons(_port);
@@ -28,6 +28,7 @@ ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, 
         perror("connect");
         return CN_CONNECTION_TO_SERVER_FAILURE;
     }
+    puts("Connected successfuly");
 
     *_sock_fd = sock;
 

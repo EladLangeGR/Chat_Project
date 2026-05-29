@@ -232,6 +232,24 @@ static void UIHandleRegister(UIState* _state)
 
             break;
 
+        case REG_SEND_ERROR:
+
+            printf("Send error\n");
+
+            break;
+
+        case REG_RECV_ERROR:
+
+            printf("Recv error\n");
+
+            break;
+
+        case REG_PARSE_ERROR:
+
+            printf("Parse error\n");
+
+            break;
+
         default:
 
             printf("Unknown registration error\n");
