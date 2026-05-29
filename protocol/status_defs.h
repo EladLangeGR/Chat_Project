@@ -14,6 +14,9 @@
 #define PSWD_MAX_LEN          100
 #define GROUP_NAME_MAX_LEN    100
 
+#define SERVER_IP             "127.0.0.1"
+#define SERVER_PORT           2222
+
 
 /*===========================================================================*/
 /*============================== MESSAGE TYPES ==============================*/
@@ -64,7 +67,13 @@ typedef enum
 
     REG_INVALID_ARGUMENTS,
 
-    REG_SYSTEM_ERROR
+    REG_SYSTEM_ERROR,
+
+    REG_PARSE_ERROR,
+
+    REG_RECV_ERROR,
+
+    REG_SEND_ERROR
 
 } RegRespStatus;
 
