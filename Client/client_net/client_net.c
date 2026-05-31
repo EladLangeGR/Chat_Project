@@ -17,8 +17,9 @@ ClientNetworkMessage ClientConnectToServer(int* _sock_fd, const char* _address, 
     memset(&sock_addr, 0, sizeof(sock_addr));
     
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = inet_pton(AF_INET, _address, &sock_addr.sin_addr);
     sock_addr.sin_port = htons(_port);
+    if (inet_pton(AF_INET, _address, &sock_addr.sin_addr) != 1)
+        return CN_CONNECTION_TO_SERVER_FAILURE;
 
     printf("Connecting to %s:%d\n", _address, _port);
 

@@ -13,7 +13,10 @@
 
 #include "client_net.h"
 #include "protocol.h"
+#include "status_defs.h"
 #include "gen_dlist.h"
+
+#define MSG_Q_ID 1234 
 
 
 typedef struct Client Client;

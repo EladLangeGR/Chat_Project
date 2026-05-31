@@ -101,7 +101,7 @@ ServerNet* ServerNet_Create(int           _port,
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_addr.s_addr = SERVER_IP;
     addr.sin_port        = htons(_port);
 
     if (bind(net->m_listenfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {

@@ -418,12 +418,9 @@ static uint8_t ProtocolReadUint8(uint8_t* _buffer, uint8_t* _index)
 
 static void ProtocolReadUint16(uint8_t* _buffer, uint8_t* _index, uint16_t* _dest)
 {
-    uint16_t value;
 
     memcpy(_dest, &_buffer[*_index], sizeof(uint16_t));
-
     (*_index) += sizeof(uint16_t);
-
 }
 
 static void ProtocolReadBuffer(uint8_t* _buffer, uint8_t* _index, void* _dest, uint8_t _size)

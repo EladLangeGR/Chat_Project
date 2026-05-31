@@ -20,8 +20,7 @@ typedef enum{
     CN_RECV_FAIL
 } ClientNetworkMessage;
 
-#define PORT 2222
-#define ADDRESS ("127.0.0.1")
+
 #define BUFFER_SIZE 200
 
 ClientNetworkMessage ClientNetSend(int _sock_fd, uint8_t* _buffer, int msg_size);

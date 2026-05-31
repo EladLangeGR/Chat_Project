@@ -2,6 +2,7 @@
 #define __SERVER_NET_H__
 
 #include <stdint.h>
+#include "status_defs.h"
 
 /*
  * Callbacks registered by Server Mng.
