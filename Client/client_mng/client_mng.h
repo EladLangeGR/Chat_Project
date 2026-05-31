@@ -13,7 +13,6 @@
 
 #include "client_net.h"
 #include "protocol.h"
-#include "status_defs.h"
 #include "gen_dlist.h"
 
 

@@ -105,8 +105,6 @@ ClientMngStatus ClientMngInit()
 
     client->groups = ListCreate();
 
-    client->queue_id = 1234;
-
     return CM_SUCCESS;
 }
 
@@ -344,7 +342,7 @@ JoinGroupRespStatus ClientMngJoinGroup(const char* _group_name)
         new_group = GroupAdd(_group_name, mc_address, mc_port);
         if (!new_group)
         {
-            return JOIN_GROUP_ALREADY_JOINED;
+            return CREATE_GROUP_SYSTEM_ERROR;
         }
 
         LaunchGroupProcesses(new_group);
@@ -389,7 +387,7 @@ ExitGroupRespStatus ClientMngExitGroup(const char* _group_name)
         return EXIT_GROUP_SYSTEM_ERROR;
     }
 
-    if (ProtocolParseExitGroupResp(client->recv_buffer, &exit_resp) != PROTOCOL_SUCCESS)
+    if (ProtocolParseExitGroupResp(client->recv_buffer, (uint8_t*)&exit_resp) != PROTOCOL_SUCCESS)
     {
         return EXIT_GROUP_SYSTEM_ERROR;
     }
@@ -507,12 +505,11 @@ static void* GroupRemove(const char* _group_name)
         {
             group = ListItrRemove(itr);
             GroupDestroy(group);
-            return NULL;
+            return;
         }
 
         itr = ListItrNext(itr);
     }
-    return NULL;
 }
 
 static pid_t ReceivePidFromQueue(int _queue_id, long _msg_type)
