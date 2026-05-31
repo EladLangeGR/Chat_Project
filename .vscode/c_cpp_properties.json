@@ -4,8 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/Client/**",
-                "${workspaceFolder}/../DS",
-                "${workspaceFolder}/./protocol"
+                "${workspaceFolder}/protocol",
+                "${workspaceFolder}/server",
+                "${workspaceFolder}/gen_DS/gen_hash",
+                "${workspaceFolder}/gen_DS/gen_queue"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

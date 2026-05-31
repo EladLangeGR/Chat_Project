@@ -1,0 +1,48 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Server",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/server/server",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/server",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Server",
+            "presentation": {
+                "group": "1-server",
+                "order": 1
+            }
+        },
+        {
+            "name": "Run Client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/client_app",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Client",
+            "presentation": {
+                "group": "2-client",
+                "order": 1
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run Server + Client",
+            "configurations": ["Run Server", "Run Client"],
+            "presentation": {
+                "order": 1
+            }
+        }
+    ]
+}
