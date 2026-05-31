@@ -153,7 +153,6 @@ RegRespStatus ClientMngRegister(const char* _username, const char* _password)
     if ((req_msg_size = ProtocolBuildAuthReq(client->send_buffer, MSG_REG_REQ, _username, _password)) < 0)
         return REG_SYSTEM_ERROR;
 
-    PrintProtocolMessage(client->send_buffer, req_msg_size);
 
     if (ClientNetSend(client->server_socket_fd, client->send_buffer, req_msg_size) != CN_SUCCESS)
         return REG_SEND_ERROR;
@@ -163,8 +162,7 @@ RegRespStatus ClientMngRegister(const char* _username, const char* _password)
         return REG_RECV_ERROR;
 
     ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp);
-    PrintProtocolMessage(client->recv_buffer, client->recv_buffer[1]);
-    
+
     if (ProtocolParseAuthResp(client->recv_buffer, (uint8_t*)&auth_resp) != PROTOCOL_SUCCESS)
         return REG_PARSE_ERROR;
 
