@@ -22,6 +22,12 @@ static void UIHandleRegister(UIState* _state);
 
 static void UIHandleLogin(UIState* _state);
 
+static void UIHandleCreateGroup();
+
+static void UIHandleJoinGroup();
+
+static void UIHandleExitGroup();
+
 static void UIGetString(char* _buffer, size_t _size);
 
 static void UIClearInputBuffer();
@@ -137,19 +143,19 @@ static void UIHandleMainMenu(UIState* _state)
     {
         case 1:
 
-            printf("Create group not implemented yet\n");
+            UIHandleCreateGroup();
 
             break;
 
         case 2:
 
-            printf("Join group not implemented yet\n");
+            UIHandleJoinGroup();
 
             break;
 
         case 3:
 
-            printf("Exit group not implemented yet\n");
+            UIHandleExitGroup();
 
             break;
 
@@ -320,6 +326,96 @@ static void UIHandleLogin(UIState* _state)
 
             printf("Unknown login error\n");
 
+            break;
+    }
+}
+
+/*===========================================================================*/
+/*============================== GROUP ACTIONS ==============================*/
+/*===========================================================================*/
+
+static void UIHandleCreateGroup(void)
+{
+    char group_name[GROUP_NAME_MAX_LEN + 1];
+    CreateGroupRespStatus status;
+
+    printf("Enter group name: ");
+    scanf("%s", group_name);
+
+    status = ClientMngCreateGroup(group_name);
+
+    switch (status)
+    {
+        case CREATE_GROUP_SUCCESS:
+            printf("Group created successfully\n");
+            break;
+
+        case CREATE_GROUP_ALREADY_EXISTS:
+            printf("Group already exists\n");
+            break;
+
+        default:
+            printf("Failed creating group\n");
+            break;
+    }
+}
+
+static void UIHandleJoinGroup(void)
+{
+    char group_name[GROUP_NAME_MAX_LEN + 1];
+    JoinGroupRespStatus status;
+
+    printf("Enter group name: ");
+    scanf("%s", group_name);
+
+    status = ClientMngJoinGroup(group_name);
+
+    switch (status)
+    {
+        case JOIN_GROUP_SUCCESS:
+            printf("Group Joined successfully\n");
+            break;
+
+        case JOIN_GROUP_ALREADY_JOINED:
+            printf("Already Joined to group\n");
+            break;
+
+        case JOIN_GROUP_DOES_NOT_EXIST:
+            printf("Group does not exist\n");
+            break;
+
+        default:
+            printf("Failed joining group\n");
+            break;
+    }
+}
+
+static void UIHandleExitGroup(void)
+{
+    char group_name[GROUP_NAME_MAX_LEN + 1];
+    ExitGroupRespStatus status;
+
+    printf("Enter group name: ");
+    scanf("%s", group_name);
+
+    status = ClientMngExitGroup(group_name);
+
+    switch (status)
+    {
+        case EXIT_GROUP_SUCCESS:
+            printf("Exited Group successfully\n");
+            break;
+
+        case EXIT_GROUP_NOT_JOINED:
+            printf("Group not joined\n");
+            break;
+
+        case EXIT_GROUP_DOES_NOT_EXIST:
+            printf("Group does not exist\n");
+            break;
+
+        default:
+            printf("Failed joining group\n");
             break;
     }
 }
