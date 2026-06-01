@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/Client/**",
+                "${workspaceFolder}/protocol",
+                "${workspaceFolder}/../DS",
+                "${workspaceFolder}/server",
+                "${workspaceFolder}/gen_DS/gen_hash",
+                "${workspaceFolder}/gen_DS/gen_queue"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

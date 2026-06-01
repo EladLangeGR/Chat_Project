@@ -3,55 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
-
-
-/*===========================================================================*/
-/*================================ CONSTANTS ================================*/
-/*===========================================================================*/
-
-#define MAX_BUFFER_SIZE       256
-
-#define HEADER_SIZE           2
-
-#define UNAME_MAX_LEN         100
-#define PSWD_MAX_LEN          100
-#define GROUP_NAME_MAX_LEN    100
-
-
-/*===========================================================================*/
-/*============================== MESSAGE TYPES ==============================*/
-/*===========================================================================*/
-
-/*
-Protocol Header Format:
-
-[type][payload_size]
-
-type         -> message type identifier
-payload_size -> payload size in bytes (does not include header)
-*/
-
-typedef enum
-{
-    MSG_REG_REQ,
-    MSG_REG_RESP,
-
-    MSG_LOGIN_REQ,
-    MSG_LOGIN_RESP,
-
-    MSG_LOGOUT_REQ,
-    MSG_LOGOUT_RESP,
-
-    MSG_CREATE_GROUP_REQ,
-    MSG_CREATE_GROUP_RESP,
-
-    MSG_JOIN_GROUP_REQ,
-    MSG_JOIN_GROUP_RESP,
-
-    MSG_EXIT_GROUP_REQ,
-    MSG_EXIT_GROUP_RESP
-
-} MessageType;
+#include "status_defs.h"
 
 
 /*===========================================================================*/
@@ -69,104 +21,6 @@ typedef enum
 } ProtocolStatus;
 
 
-/*===========================================================================*/
-/*============================ REGISTER RESPONSES ===========================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    REG_SUCCESS,
-
-    REG_USER_EXISTS,
-
-    REG_INVALID_ARGUMENTS
-
-} RegRespStatus;
-
-
-/*===========================================================================*/
-/*============================= LOGIN RESPONSES =============================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    LOGIN_SUCCESS,
-
-    LOGIN_NO_SUCH_USER,
-
-    LOGIN_WRONG_PASSWORD,
-
-    LOGIN_USER_ALREADY_ACTIVE,
-
-    LOGIN_INVALID_ARGUMENTS
-
-} LoginRespStatus;
-
-
-/*===========================================================================*/
-/*============================ LOGOUT RESPONSES =============================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    LOGOUT_SUCCESS,
-
-    LOGOUT_USER_NOT_ACTIVE,
-
-    LOGOUT_INVALID_ARGUMENTS
-
-} LogoutRespStatus;
-
-
-/*===========================================================================*/
-/*========================= CREATE GROUP RESPONSES ==========================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    CREATE_GROUP_SUCCESS,
-
-    CREATE_GROUP_ALREADY_EXISTS,
-
-    CREATE_GROUP_INVALID_ARGUMENTS,
-
-    CREATE_GROUP_NO_AVAILABLE_MC_ADDR
-
-} CreateGroupRespStatus;
-
-
-/*===========================================================================*/
-/*=========================== JOIN GROUP RESPONSES ==========================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    JOIN_GROUP_SUCCESS,
-
-    JOIN_GROUP_DOES_NOT_EXIST,
-
-    JOIN_GROUP_ALREADY_JOINED,
-
-    JOIN_GROUP_INVALID_ARGUMENTS
-
-} JoinGroupRespStatus;
-
-
-/*===========================================================================*/
-/*=========================== EXIT GROUP RESPONSES ==========================*/
-/*===========================================================================*/
-
-typedef enum
-{
-    EXIT_GROUP_SUCCESS,
-
-    EXIT_GROUP_DOES_NOT_EXIST,
-
-    EXIT_GROUP_USER_NOT_MEMBER,
-
-    EXIT_GROUP_INVALID_ARGUMENTS
-
-} ExitGroupRespStatus;
 
 
 /*===========================================================================*/
@@ -355,16 +209,17 @@ ProtocolStatus ProtocolParseGroupReq(uint8_t* _buffer, char* _group_name);
  * - MSG_JOIN_GROUP_RESP
  *
  * Message format:
- * [type][size][status_len][status][ip_len][multicast_ip]
+ * [type][size][status_len][status][ip_len][multicast_ip][port_len][port]
  *
  * @param[out] _buffer Destination serialization buffer.
  * @param[in] _msg_type Group response type.
  * @param[in] _status Response status.
  * @param[in] _mc_ip Multicast IP string.
+ * @param[in] _mc_port Multicast port value.
  *
  * @return ProtocolStatus result.
  */
-int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip);
+int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _status, const char* _mc_ip, uint16_t _mc_port);
 
 
 /**
@@ -377,10 +232,11 @@ int ProtocolBuildGroupResp(uint8_t* _buffer, MessageType _msg_type, uint8_t _sta
  * @param[in] _buffer Serialized message buffer.
  * @param[out] _status Parsed response status.
  * @param[out] _mc_ip Parsed multicast IP string.
+ * @param[out] _mc_port parsed multicast port value.
  *
  * @return ProtocolStatus result.
  */
-ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip);
+ProtocolStatus ProtocolParseGroupResp(uint8_t* _buffer, uint8_t* _status, char* _mc_ip, uint16_t* _mc_port);
 
 
 /*===========================================================================*/

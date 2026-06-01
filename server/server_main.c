@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include "server_net.h"
 #include "server_mng.h"
-
-#define SERVER_PORT 8080
+#include "status_defs.h"
 
 int main(void)
 {
