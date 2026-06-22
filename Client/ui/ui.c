@@ -216,7 +216,7 @@ static void UIHandleRegister(UIState* _state)
 
             printf("Registration successful\n");
 
-            *_state = UI_MAIN_MENU;
+            *_state = UI_START_MENU;
 
             break;
 
