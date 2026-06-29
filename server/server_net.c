@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "server_net.h"
@@ -22,50 +22,69 @@ struct ServerNet {
     void*         m_context;
 };
 
-typedef struct {
-    ServerNet* net;
-    int        sockfd;
-} ClientArgs;
-
 /*===========================================================================*/
-/*                          CLIENT THREAD                                    */
+/*                          INTERNAL HELPERS                                 */
 /*===========================================================================*/
 
-static void* ClientThread(void* _arg)
+/*
+ * Read one complete protocol message from a ready socket.
+ * select() already told us the socket has data, so the blocking recv
+ * returns immediately for these small LAN messages.
+ * Returns 0 on success, -1 if the client closed or on error.
+ */
+static int ReadOneMessage(int _sockfd, uint8_t* _buffer)
 {
-    ClientArgs* args   = (ClientArgs*)_arg;
-    int         sockfd = args->sockfd;
-    ServerNet*  net    = args->net;
-    uint8_t     buffer[HEADER_SIZE + MAX_PAYLOAD];
-    ssize_t     bytes;
+    ssize_t bytes;
+    uint8_t payload_size;
 
-    free(args);
+    bytes = recv(_sockfd, _buffer, HEADER_SIZE, MSG_WAITALL);
+    if (bytes <= 0) return -1;
 
-    if (net->m_onNew)
-        net->m_onNew(sockfd, net->m_context);
+    payload_size = _buffer[1];
+    if (payload_size > 0) {
+        bytes = recv(_sockfd, _buffer + HEADER_SIZE, payload_size, MSG_WAITALL);
+        if (bytes <= 0) return -1;
+    }
+    return 0;
+}
 
-    while (net->m_flag) {
-        /* Read the 2-byte header first */
-        bytes = recv(sockfd, buffer, HEADER_SIZE, MSG_WAITALL);
-        if (bytes <= 0) break;
+/* Accept a new client and register it in the master fd set */
+static void AcceptClient(ServerNet* _net, fd_set* _master, int* _maxfd)
+{
+    struct sockaddr_in client_addr;
+    socklen_t          addr_len = sizeof(client_addr);
+    int                clientfd;
 
-        uint8_t payload_size = buffer[1];
-
-        /* Read the payload */
-        if (payload_size > 0) {
-            bytes = recv(sockfd, buffer + HEADER_SIZE, payload_size, MSG_WAITALL);
-            if (bytes <= 0) break;
-        }
-
-        if (net->m_onMsg)
-            net->m_onMsg(sockfd, buffer, net->m_context);
+    clientfd = accept(_net->m_listenfd,
+                      (struct sockaddr*)&client_addr, &addr_len);
+    if (clientfd < 0) {
+        if (_net->m_onFail) _net->m_onFail(_net->m_context);
+        return;
     }
 
-    if (net->m_onClose)
-        net->m_onClose(sockfd, net->m_context);
+    FD_SET(clientfd, _master);
+    if (clientfd > *_maxfd)
+        *_maxfd = clientfd;
 
-    close(sockfd);
-    return NULL;
+    if (_net->m_onNew)
+        _net->m_onNew(clientfd, _net->m_context);
+}
+
+/* Handle readable data (or disconnect) on an existing client socket */
+static void HandleClient(ServerNet* _net, int _sockfd, fd_set* _master)
+{
+    uint8_t buffer[HEADER_SIZE + MAX_PAYLOAD];
+
+    if (ReadOneMessage(_sockfd, buffer) < 0) {
+        /* client disconnected */
+        if (_net->m_onClose) _net->m_onClose(_sockfd, _net->m_context);
+        close(_sockfd);
+        FD_CLR(_sockfd, _master);
+        return;
+    }
+
+    if (_net->m_onMsg)
+        _net->m_onMsg(_sockfd, buffer, _net->m_context);
 }
 
 /*===========================================================================*/
@@ -124,34 +143,40 @@ ServerNet* ServerNet_Create(int           _port,
 
 void ServerNet_Run(ServerNet* _net)
 {
-    struct sockaddr_in client_addr;
-    socklen_t          addr_len = sizeof(client_addr);
-    int                clientfd;
-    pthread_t          tid;
-    ClientArgs*        args;
+    fd_set master;    /* all sockets we care about */
+    fd_set readfds;   /* the working copy select() modifies each round */
+    int    maxfd;
+    int    fd;
 
     if (!_net) return;
 
+    FD_ZERO(&master);
+    FD_SET(_net->m_listenfd, &master);
+    maxfd = _net->m_listenfd;
+
     while (_net->m_flag) {
-        clientfd = accept(_net->m_listenfd,
-                          (struct sockaddr*)&client_addr, &addr_len);
-        if (clientfd < 0) {
+        readfds = master; /* select() overwrites the set, so work on a copy */
+
+        if (select(maxfd + 1, &readfds, NULL, NULL, NULL) < 0) {
             if (_net->m_onFail) _net->m_onFail(_net->m_context);
             continue;
         }
 
-        args = (ClientArgs*)malloc(sizeof(ClientArgs));
-        if (!args) { close(clientfd); continue; }
+        for (fd = 0; fd <= maxfd; fd++) {
+            if (!FD_ISSET(fd, &readfds))
+                continue;
 
-        args->net    = _net;
-        args->sockfd = clientfd;
-
-        if (pthread_create(&tid, NULL, ClientThread, args) != 0) {
-            free(args);
-            close(clientfd);
-        } else {
-            pthread_detach(tid); /* thread cleans up itself */
+            if (fd == _net->m_listenfd)
+                AcceptClient(_net, &master, &maxfd);
+            else
+                HandleClient(_net, fd, &master);
         }
+    }
+
+    /* Loop stopped: close every client socket still open */
+    for (fd = 0; fd <= maxfd; fd++) {
+        if (fd != _net->m_listenfd && FD_ISSET(fd, &master))
+            close(fd);
     }
 }
 

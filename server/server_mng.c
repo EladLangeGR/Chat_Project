@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include "server_mng.h"
 #include "user_mng.h"
 #include "group_mng.h"
@@ -8,13 +7,15 @@
 
 #define MAX_FD 1024
 
+/*
+ * The server runs single-threaded on top of select(), so all client
+ * requests are handled one at a time in the same thread. That removes
+ * every race condition, which is why there are no mutexes here.
+ */
 struct ServerMng {
-    UserMng*        m_userMng;
-    GroupMng*       m_groupMng;
-    char*           m_fdToUser[MAX_FD]; /* sockfd -> username (heap string) */
-    pthread_mutex_t m_userLock;
-    pthread_mutex_t m_groupLock;
-    pthread_mutex_t m_fdLock;
+    UserMng*  m_userMng;
+    GroupMng* m_groupMng;
+    char*     m_fdToUser[MAX_FD]; /* sockfd -> username (heap string) */
 };
 
 /*===========================================================================*/
@@ -23,22 +24,17 @@ struct ServerMng {
 
 static char* GetUsernameByFd(ServerMng* _mng, int _sockfd)
 {
-    char* name = NULL;
-    pthread_mutex_lock(&_mng->m_fdLock);
-    if (_sockfd >= 0 && _sockfd < MAX_FD && _mng->m_fdToUser[_sockfd])
-        name = strdup(_mng->m_fdToUser[_sockfd]);
-    pthread_mutex_unlock(&_mng->m_fdLock);
-    return name;
+    if (_sockfd >= 0 && _sockfd < MAX_FD)
+        return _mng->m_fdToUser[_sockfd];
+    return NULL;
 }
 
 static void SetUsernameByFd(ServerMng* _mng, int _sockfd, const char* _username)
 {
-    pthread_mutex_lock(&_mng->m_fdLock);
     if (_sockfd >= 0 && _sockfd < MAX_FD) {
         free(_mng->m_fdToUser[_sockfd]);
         _mng->m_fdToUser[_sockfd] = _username ? strdup(_username) : NULL;
     }
-    pthread_mutex_unlock(&_mng->m_fdLock);
 }
 
 /*===========================================================================*/
@@ -50,16 +46,9 @@ static void LogoutSocket(ServerMng* _mng, int _sockfd)
     char* username = GetUsernameByFd(_mng, _sockfd);
     if (!username) return;
 
-    pthread_mutex_lock(&_mng->m_groupLock);
     GroupMng_RemoveUserFromAll(_mng->m_groupMng, username);
-    pthread_mutex_unlock(&_mng->m_groupLock);
-
-    pthread_mutex_lock(&_mng->m_userLock);
     UserMng_Logout(_mng->m_userMng, username);
-    pthread_mutex_unlock(&_mng->m_userLock);
-
     SetUsernameByFd(_mng, _sockfd, NULL);
-    free(username);
 }
 
 /*===========================================================================*/
@@ -76,11 +65,8 @@ static void HandleRegister(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
 
     if (ProtocolParseAuthReq(_buffer, username, password) != PROTOCOL_SUCCESS)
         status = REG_INVALID_ARGUMENTS;
-    else {
-        pthread_mutex_lock(&_mng->m_userLock);
+    else
         status = UserMng_Register(_mng->m_userMng, username, password);
-        pthread_mutex_unlock(&_mng->m_userLock);
-    }
 
     msg_size = ProtocolBuildAuthResp(resp, MSG_REG_RESP, (uint8_t)status);
     ServerNet_SendMsg(_sockfd, resp, msg_size);
@@ -97,10 +83,7 @@ static void HandleLogin(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
     if (ProtocolParseAuthReq(_buffer, username, password) != PROTOCOL_SUCCESS)
         status = LOGIN_INVALID_ARGUMENTS;
     else {
-        pthread_mutex_lock(&_mng->m_userLock);
         status = UserMng_Login(_mng->m_userMng, username, password, _sockfd);
-        pthread_mutex_unlock(&_mng->m_userLock);
-
         if (status == LOGIN_SUCCESS)
             SetUsernameByFd(_mng, _sockfd, username);
     }
@@ -114,15 +97,12 @@ static void HandleLogout(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
     LogoutRespStatus status;
     uint8_t          resp[MAX_BUFFER_SIZE];
     int              msg_size;
-    char*            username;
 
     (void)_buffer;
 
-    username = GetUsernameByFd(_mng, _sockfd);
-    if (!username) {
+    if (!GetUsernameByFd(_mng, _sockfd)) {
         status = LOGOUT_USER_NOT_ACTIVE;
     } else {
-        free(username);
         LogoutSocket(_mng, _sockfd);
         status = LOGOUT_SUCCESS;
     }
@@ -156,15 +136,8 @@ static void HandleCreateGroup(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
         return;
     }
 
-    pthread_mutex_lock(&_mng->m_userLock);
-    user = UserMng_GetUser(_mng->m_userMng, username);
-    pthread_mutex_unlock(&_mng->m_userLock);
-
-    pthread_mutex_lock(&_mng->m_groupLock);
+    user   = UserMng_GetUser(_mng->m_userMng, username);
     status = GroupMng_CreateGroup(_mng->m_groupMng, group_name, username, user, mc_ip);
-    pthread_mutex_unlock(&_mng->m_groupLock);
-
-    free(username);
 
     msg_size = ProtocolBuildGroupResp(resp, MSG_CREATE_GROUP_RESP, (uint8_t)status,
                                       (status == CREATE_GROUP_SUCCESS) ? mc_ip : "");
@@ -196,15 +169,8 @@ static void HandleJoinGroup(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
         return;
     }
 
-    pthread_mutex_lock(&_mng->m_userLock);
-    user = UserMng_GetUser(_mng->m_userMng, username);
-    pthread_mutex_unlock(&_mng->m_userLock);
-
-    pthread_mutex_lock(&_mng->m_groupLock);
+    user   = UserMng_GetUser(_mng->m_userMng, username);
     status = GroupMng_JoinGroup(_mng->m_groupMng, group_name, username, user, mc_ip);
-    pthread_mutex_unlock(&_mng->m_groupLock);
-
-    free(username);
 
     msg_size = ProtocolBuildGroupResp(resp, MSG_JOIN_GROUP_RESP, (uint8_t)status,
                                       (status == JOIN_GROUP_SUCCESS) ? mc_ip : "");
@@ -232,11 +198,7 @@ static void HandleExitGroup(ServerMng* _mng, int _sockfd, uint8_t* _buffer)
         return;
     }
 
-    pthread_mutex_lock(&_mng->m_groupLock);
     status = GroupMng_ExitGroup(_mng->m_groupMng, group_name, username);
-    pthread_mutex_unlock(&_mng->m_groupLock);
-
-    free(username);
 
     msg_size = ProtocolBuildExitGroupResp(resp, status);
     ServerNet_SendMsg(_sockfd, resp, msg_size);
@@ -261,10 +223,6 @@ ServerMng* ServerMng_Create(void)
         return NULL;
     }
 
-    pthread_mutex_init(&mng->m_userLock,  NULL);
-    pthread_mutex_init(&mng->m_groupLock, NULL);
-    pthread_mutex_init(&mng->m_fdLock,    NULL);
-
     return mng;
 }
 
@@ -278,10 +236,6 @@ void ServerMng_Destroy(ServerMng** _mng)
 
     for (i = 0; i < MAX_FD; i++)
         free((*_mng)->m_fdToUser[i]);
-
-    pthread_mutex_destroy(&(*_mng)->m_userLock);
-    pthread_mutex_destroy(&(*_mng)->m_groupLock);
-    pthread_mutex_destroy(&(*_mng)->m_fdLock);
 
     free(*_mng);
     *_mng = NULL;

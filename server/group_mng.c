@@ -22,9 +22,8 @@ static size_t StringHash(void* _key)
 {
     unsigned char* str = (unsigned char*)_key;
     size_t hash = 5381;
-    int c;
-    while ((c = *str++))
-        hash = ((hash << 5) + hash) + c;
+    while (*str)
+        hash = hash * 33 + *str++;
     return hash;
 }
 
